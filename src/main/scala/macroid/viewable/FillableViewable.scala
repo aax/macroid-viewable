@@ -50,6 +50,11 @@ object FillableViewable {
     override def makeSlots(implicit ctx: ActivityContext, appCtx: AppContext): (Ui[W], Slots) = make
     override def fillSlots(slots: S, data: A)(implicit ctx: ActivityContext, appCtx: AppContext): Ui[Any] = fill(slots, data)
   }
+
+  def bound[A, W1 <: View](make: => (Ui[W1], Binding[A])): FillableViewable[A] = new BoundFillableViewable[A, W1] {
+    override def makeSlots(implicit ctx: ActivityContext, appCtx: AppContext): (Ui[W], Slots) = make
+  }
+
 }
 
 trait TweakFillableViewable[A] extends FillableViewable[A] {
@@ -81,4 +86,15 @@ trait SlottedFillableViewable[A, W1 <: View] extends FillableViewable[A] {
     val (v1, s) = SafeCast[Any, Slots](v.getTag).map(x ⇒ (Ui(v), x)).getOrElse(makeSlots)
     fillSlots(s, data).flatMap(_ ⇒ v1)
   }
+}
+
+trait BoundFillableViewable[A, W1 <: View] extends SlottedFillableViewable[A, W1] {
+  type Slots = Binding[A]
+  override def fillSlots(binding: Binding[A], data: A)(implicit ctx: ActivityContext, appCtx: AppContext): Ui[Any] =
+    binding.bind(data).fold(Ui.nop)(_ ~ _)
+}
+
+class Binding[A] {
+  var binders = List.empty[A => Ui[_]]
+  def bind(data: A): List[Ui[_]] = binders.map(_.apply(data))
 }
