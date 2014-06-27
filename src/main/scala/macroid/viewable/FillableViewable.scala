@@ -44,6 +44,12 @@ object FillableViewable {
     def makeView(implicit ctx: ActivityContext, appCtx: AppContext) = make
     def transformer(data: A)(implicit ctx: ActivityContext, appCtx: AppContext) = fill(data)
   }
+
+  def slotted[S, A, W1 <: View](make: => (Ui[W1], S))(fill: (S, A) => Ui[Any]): FillableViewable[A] = new SlottedFillableViewable[A,W1] {
+    type Slots = S
+    override def makeSlots(implicit ctx: ActivityContext, appCtx: AppContext): (Ui[W], Slots) = make
+    override def fillSlots(slots: S, data: A)(implicit ctx: ActivityContext, appCtx: AppContext): Ui[Any] = fill(slots, data)
+  }
 }
 
 trait TweakFillableViewable[A] extends FillableViewable[A] {
@@ -59,12 +65,12 @@ trait TransformerFillableViewable[A] extends FillableViewable[A] {
   def fillView(view: Ui[W], data: A)(implicit ctx: ActivityContext, appCtx: AppContext) = view <~~ transformer(data)
 }
 
-trait SlottedFillableViewable[A] extends FillableViewable[A] {
+trait SlottedFillableViewable[A, W1 <: View] extends FillableViewable[A] {
   type Slots
   def makeSlots(implicit ctx: ActivityContext, appCtx: AppContext): (Ui[W], Slots)
   def fillSlots(slots: Slots, data: A)(implicit ctx: ActivityContext, appCtx: AppContext): Ui[Any]
 
-  type W = View
+  type W = W1
 
   def makeView(implicit ctx: ActivityContext, appCtx: AppContext) = {
     val (v, s) = makeSlots
