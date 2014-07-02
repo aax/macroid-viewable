@@ -51,8 +51,8 @@ object FillableViewable {
     override def fillSlots(slots: S, data: A)(implicit ctx: ActivityContext, appCtx: AppContext): Ui[Any] = fill(slots, data)
   }
 
-  def bound[A, W1 <: View](make: => (Ui[W1], Binding[A])): FillableViewable[A] = new BoundFillableViewable[A, W1] {
-    override def makeSlots(implicit ctx: ActivityContext, appCtx: AppContext): (Ui[W], Slots) = make
+  def bound[A, W1 <: View](make: () => (Ui[W1], Binding[A])): FillableViewable[A] = new BoundFillableViewable[A, W1] {
+    override def makeSlots(implicit ctx: ActivityContext, appCtx: AppContext): (Ui[W], Slots) = make()
   }
 
 }
